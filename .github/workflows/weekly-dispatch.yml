@@ -1,0 +1,58 @@
+name: Weekly Dispatch
+
+# Runs Tuesday 14:00 UTC (~9am Central) — after Monday Night Football.
+# You can also run it by hand from the Actions tab (workflow_dispatch).
+on:
+  schedule:
+    - cron: "0 14 * * 2"
+  workflow_dispatch:
+    inputs:
+      only_league:
+        description: "Optional: a single Sleeper league ID to run (blank = all)"
+        required: false
+        default: ""
+      force:
+        description: "Overwrite an existing week's file? (true/false)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate dispatches
+        id: gen
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONLY_LEAGUE: ${{ github.event.inputs.only_league }}
+          FORCE: ${{ github.event.inputs.force == 'true' && '1' || '' }}
+        run: node scripts/generate-dispatch.mjs
+
+      - name: Open pull request with the new dispatch(es)
+        if: steps.gen.outputs.wrote != '0' && steps.gen.outputs.wrote != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          WEEK_TAG=$(date -u +%Y%m%d-%H%M)
+          BRANCH="dispatch/$WEEK_TAG"
+          git config user.name "dispatch-bot"
+          git config user.email "actions@github.com"
+          git checkout -b "$BRANCH"
+          git add dispatches
+          git commit -m "Weekly dispatch draft ($WEEK_TAG)"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "📰 Weekly dispatch draft — $WEEK_TAG" \
+            --body "Auto-written from this week's Sleeper data. Read the diff, tweak any wording, then **Merge** to publish to the live site. Close it to discard." \
+            --base main --head "$BRANCH"
