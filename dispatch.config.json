@@ -1,0 +1,10 @@
+{
+  "model": "claude-sonnet-5-5",
+  "leagues": [
+    { "id": "1389331035040260096", "name": "Aggtown Fantasy League", "mine": true },
+    { "id": "1389735540009500672", "name": "Sober Gang", "mine": true },
+    { "id": "1377490959020855296", "name": "Sea Squad", "mine": true },
+    { "id": "1383644864339525632", "name": "Goodell Haters" },
+    { "id": "1382479927399419904", "name": "12 Guys 1 Cup" }
+  ]
+}

@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The League Almanac — live</title>
+<style>
+  :root{
+    --paper:#fbfaf7; --ink:#17161a; --navy:#16263f; --maroon:#6b1119;
+    --teal:#1f7a8c; --gold:#b58a2c; --muted:#6f6a63; --rule:#e2ddd2; --bad:#8f2230; --go:#2f7d55;
+    --card:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){--paper:#14131a;--ink:#ece7df;--card:#1d1c24;--rule:#33313c;--muted:#9a93a6;--navy:#bcd0e6;}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 Georgia,"Times New Roman",serif}
+  .wrap{max-width:860px;margin:0 auto;padding:0 20px 80px}
+  h1,h2,.kicker,th,.tabs button,.rk .mv,.award .t,.motw .vs,.badge{font-family:"Arial Black","Helvetica Neue",Helvetica,Arial,sans-serif}
+
+  header{border-bottom:5px solid var(--maroon);padding:26px 0 14px;margin-bottom:4px}
+  .kicker{font-size:12px;color:var(--gold);letter-spacing:.05em}
+  h1{font-size:clamp(30px,6.5vw,46px);line-height:.95;margin:4px 0 0;letter-spacing:-.03em;color:var(--maroon)}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+  select,button,input[type=text]{font:15px/1 "Helvetica Neue",Arial,sans-serif;padding:9px 12px;border-radius:7px;border:1px solid var(--rule);background:var(--card);color:var(--ink)}
+  button{cursor:pointer;background:var(--navy);color:#fff;border:0;font-weight:700}
+  button.ghost{background:transparent;border:1px solid var(--rule);color:var(--ink);font-weight:400}
+  button:hover{filter:brightness(1.08)}
+  .meta{color:var(--muted);font-size:13px;margin-left:auto}
+
+  .note{background:var(--card);border:1px solid var(--rule);border-left:5px solid var(--gold);border-radius:8px;padding:14px 16px;margin:18px 0}
+  .note label{font-family:"Arial Black",Arial;font-size:12px;color:var(--gold);display:block;margin-bottom:6px}
+  .note textarea{width:100%;min-height:70px;resize:vertical;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);padding:10px;font:16px/1.5 Georgia,serif}
+  .note .saved{font-size:12px;color:var(--go);margin-top:4px;height:14px}
+  .cnote-text{font:16px/1.55 Georgia,serif;color:var(--ink)} .cnote-text p{margin:8px 0}
+
+  .tabs{display:flex;flex-wrap:wrap;gap:4px;margin:18px 0 4px;border-bottom:2px solid var(--ink)}
+  .tabs button{background:transparent;color:var(--muted);border:0;border-radius:0;padding:9px 13px;font-size:13px;font-weight:700;letter-spacing:.02em}
+  .tabs button.on{color:var(--maroon);border-bottom:3px solid var(--maroon);margin-bottom:-2px}
+
+  section{display:none;padding:10px 0 4px} section.on{display:block}
+  h2{font-size:21px;margin:14px 0 6px;letter-spacing:-.02em}
+  p.sub{color:var(--muted);font-size:14px;margin:2px 0 12px}
+
+  table{width:100%;border-collapse:collapse;font-family:"Helvetica Neue",Arial,sans-serif;font-size:13.5px;margin:8px 0}
+  th{background:var(--ink);color:var(--paper);text-align:left;padding:7px 8px;font-size:12px;cursor:pointer;user-select:none;white-space:nowrap}
+  th.n,td.n{text-align:right}
+  td{padding:6px 8px;border-bottom:1px solid var(--rule)}
+  tr.me td{font-weight:bold;background:rgba(107,17,25,.06)}
+  tr.hot td{background:rgba(31,122,140,.08)} tr.cold td{background:rgba(143,34,48,.07)}
+
+  .rk{display:flex;gap:12px;align-items:baseline;border-bottom:1px solid var(--rule);padding:8px 0}
+  .rk .n{font-family:"Arial Black";font-size:18px;color:var(--maroon);min-width:26px}
+  .rk .mv{font-size:12px;min-width:44px}
+  .up{color:var(--go);font-weight:bold}.down{color:var(--bad);font-weight:bold}.flat{color:var(--muted)}
+  .rk .tm{font-weight:bold} .rk .tx{flex:1}
+
+  .award{border-left:5px solid var(--gold);padding:3px 0 3px 14px;margin:9px 0}
+  .award .t{font-size:12px;color:var(--gold)} .award p{margin:2px 0;font-size:15px}
+
+  .motw{background:#16263f;color:#eef2f6;border-radius:8px;padding:16px 18px;margin:10px 0}
+  .motw .vs{font-size:20px;color:#fff}.motw p{margin:6px 0;color:#cdd8e4;font-size:14px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+
+  svg .lbl{font:11px "Helvetica Neue",Arial;fill:var(--ink)}
+  svg .axis{stroke:var(--rule)} svg .diag{stroke:var(--muted);stroke-dasharray:5 4}
+  .status{padding:40px 10px;text-align:center;color:var(--muted)}
+  .spin{display:inline-block;width:22px;height:22px;border:3px solid var(--rule);border-top-color:var(--maroon);border-radius:50%;animation:sp .8s linear infinite;vertical-align:middle;margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .err{color:var(--bad);background:rgba(143,34,48,.08);border:1px solid var(--bad);border-radius:8px;padding:14px;margin:14px 0;font-size:14px}
+  .dispatch p{font-size:16px;margin:12px 0} .dispatch .lede-dispatch{font-size:19px;line-height:1.5}
+  .dispatch b{color:var(--maroon)}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dispatch b{color:#e68a94}}
+  .foot{margin-top:40px;padding-top:14px;border-top:2px solid var(--ink);color:var(--muted);font-size:12px}
+  .addrow{display:flex;gap:6px;margin-top:8px}
+  .badge{display:inline-block;background:var(--maroon);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;vertical-align:middle;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">LIVE · PULLS FROM SLEEPER EACH TIME YOU OPEN IT</div>
+  <h1 id="title">The League Almanac</h1>
+  <div class="bar">
+    <select id="league"></select>
+    <button class="ghost" id="refresh">⟳ Refresh</button>
+    <button class="ghost" id="copylink" title="Copy a link that opens straight to this league">🔗 Copy link</button>
+    <span class="meta" id="meta"></span>
+  </div>
+  <div class="addrow">
+    <input type="text" id="addid" placeholder="add a league by Sleeper ID…" style="flex:1">
+    <input type="text" id="addname" placeholder="name" style="width:150px">
+    <button class="ghost" id="addbtn">＋ Add</button>
+  </div>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<div id="app"><div class="status"><span class="spin"></span>Loading live data from Sleeper…</div></div>
+
+<div class="foot">
+  Data pulled live from Sleeper's public API every time this page loads — so it's always current. Power-ranking movement is tracked week over week in your browser. Playoff odds are a 4,000-season simulation run right here on the page. The Commissioner's Note is set in the page itself and shows for everyone who opens the link. Not affiliated with Sleeper or the NFL.
+</div>
+</div>
+
+<script>
+//============ CONFIG ============
+const PRESETS=[
+  {name:"Aggtown Fantasy League", id:"1389331035040260096"},
+  {name:"Sober Gang", id:"1389735540009500672"},
+  {name:"Sea Squad", id:"1377490959020855296"},
+  {name:"Goodell Haters", id:"1383644864339525632"},
+  {name:"12 Guys 1 Cup", id:"1382479927399419904"},
+];
+
+/* ============================================================
+   COMMISSIONER'S NOTE — edit the text between the backticks each
+   week, then commit. It shows at the top of the Dispatch tab for
+   EVERYONE who opens the link. Leave it blank ("") to hide it.
+   You can use blank lines for paragraphs.
+   ============================================================ */
+const COMMISSIONER_NOTE = `
+Welcome to the live Almanac. The standings, luck map, power rankings, awards and playoff odds all update themselves every week — just open the link.
+
+Commissioner's note of the week goes right here. Edit this block on GitHub and commit to update it for the whole league.
+`;
+/* ========================================================== */
+
+/* ============================================================
+   WEEKLY DISPATCH — the hand-written newsletter for the front page.
+
+   This is the part the numbers can't write. Drop the real, written
+   dispatch for a week here and it REPLACES the auto-generated text
+   for everyone who opens the link. Any week with no entry falls back
+   to the auto version, so the page is never blank.
+
+   FORMAT:  "<leagueId>": { <weekNumber>: `  ...HTML prose...  ` }
+   Use <p>…</p> for paragraphs and <b>…</b> for bold. You can add a
+   subhead with <h3>…</h3>.
+
+   WORKFLOW each week: send me the week's data (or the live link),
+   I write the dispatch, you paste it in under that league + week,
+   then commit. League IDs are the same ones in PRESETS above.
+   ============================================================ */
+const DISPATCHES = {
+  // ---- EXAMPLE (week 0 never shows — it's here only to show the format) ----
+  "0": { 0: `
+<p><b>This is where the written dispatch goes.</b> Everything between
+the backticks is the newsletter — the storylines, the trash talk, the
+injury fallout — written fresh each week.</p>
+<p>Delete this example. Real entries look like:
+<code>"1389331035040260096": { 6: \`...your prose...\` }</code>.</p>
+` },
+
+  // ---- Real dispatches go below, by league ID, by week ----
+  // "1389331035040260096": {   // Aggtown
+  //   6: ` <p>Through Week 6, ...</p> `,
+  // },
+};
+/* ========================================================== */
+
+// Leagues that run the weekly "lowest score shotguns" rule → get the Shotgun tab.
+const SHOTGUN_LEAGUES = ["1377490959020855296"]; // Sea Squad
+const API="https://api.sleeper.app/v1";
+const $=s=>document.querySelector(s);
+const n1=x=>Math.round(x*10)/10;
+const esc=s=>(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function erf(x){const t=1/(1+0.3275911*Math.abs(x));const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return x>=0?y:-y;}
+const normcdf=z=>0.5*(1+erf(z/Math.SQRT2));
+const pct=x=>Math.round(x*1000)/10;
+const FLEX={FLEX:["RB","WR","TE"],WRRB_FLEX:["RB","WR"],REC_FLEX:["WR","TE"],SUPER_FLEX:["QB","RB","WR","TE"],IDP_FLEX:["DL","LB","DB"]};
+let PLAYERS=null, STATE={}, CUR=null;
+
+//============ LEAGUE LIST (presets + user-added) ============
+function leagues(){
+  let extra=[]; try{extra=JSON.parse(localStorage.getItem("almanac_leagues")||"[]")}catch(e){}
+  return [...PRESETS, ...extra];
+}
+function fillLeagueSelect(){
+  const sel=$("#league"); sel.innerHTML="";
+  leagues().forEach(l=>{const o=document.createElement("option");o.value=l.id;o.textContent=l.name;sel.appendChild(o);});
+  const last=localStorage.getItem("almanac_last"); if(last) sel.value=last;
+}
+
+//============ FETCH ============
+async function j(u){const r=await fetch(u);if(!r.ok)throw new Error(u.split("/v1")[1]+" → "+r.status);return r.json();}
+const pname=p=>{if(PLAYERS&&PLAYERS[p]){const x=PLAYERS[p];return x.full_name||((x.first_name||"")+" "+(x.last_name||"")).trim()||p;}return /^[A-Z]{2,4}$/.test(p)?p+" DST":p;};
+const ppos=p=>{if(PLAYERS&&PLAYERS[p])return (PLAYERS[p].fantasy_positions&&PLAYERS[p].fantasy_positions[0])||PLAYERS[p].position;return /^[A-Z]{2,4}$/.test(p)?"DEF":null;};
+const pinj=p=>PLAYERS&&PLAYERS[p]?PLAYERS[p].injury_status:null;
+
+function bestLineup(slots,pp){
+  const pool=Object.keys(pp).filter(p=>pp[p]!=null&&ppos(p));
+  const used=new Set();let tot=0;
+  const order=slots.map((s,i)=>[s,i]).filter(([s])=>!["BN","IR","TAXI"].includes(s)).sort((a,b)=>(FLEX[a[0]]?1:0)-(FLEX[b[0]]?1:0));
+  for(const [slot] of order){const ok=FLEX[slot]||[slot];let pick=null,best=-1e9;
+    for(const p of pool){if(used.has(p))continue;if(!ok.includes(ppos(p)))continue;if((pp[p]||0)>best){best=pp[p]||0;pick=p;}}
+    if(pick){used.add(pick);tot+=best;}}
+  return tot;
+}
+
+//============ LOAD A LEAGUE ============
+function leagueFromURL(){
+  const p=new URLSearchParams(location.search);
+  const q=(p.get("lg")||p.get("league")||(location.hash||"").replace(/^#/,"")||"").trim();
+  return /^\d{5,}$/.test(q)?q:null;
+}
+async function load(id){
+  localStorage.setItem("almanac_last",id);
+  try{history.replaceState(null,"","?lg="+id);}catch(e){}  // the address bar now IS the shareable link for this league
+  $("#app").innerHTML='<div class="status"><span class="spin"></span>Pulling live data from Sleeper…</div>';
+  try{
+    const lg=await j(`${API}/league/${id}`);
+    const [users,rosters]=await Promise.all([j(`${API}/league/${id}/users`),j(`${API}/league/${id}/rosters`)]);
+    const uname={};users.forEach(u=>uname[u.user_id]=u.display_name||u.username);
+    const rName={};rosters.forEach(r=>rName[r.roster_id]=(r.owner_id&&uname[r.owner_id])||("Team "+r.roster_id));
+    const pwk=lg.settings.playoff_week_start||15;
+    // pull weeks until an unplayed one
+    const weeks={}; let upcoming=null,upWeek=null;
+    for(let w=1;w<pwk;w++){
+      let m; try{m=await j(`${API}/league/${id}/matchups/${w}`)}catch(e){break}
+      if(m&&m.some(x=>x.points>0))weeks[w]=m; else {upcoming=m;upWeek=w;break;}
+    }
+    CUR={lg,rName,rosters,weeks,upcoming,upWeek,pwk,id};
+    // guess "my team" = keveezy if present
+    const mine=Object.keys(rName).find(r=>/keveezy/i.test(rName[r]));
+    CUR.mine=mine?rName[mine]:null;
+    renderCore();
+    // enrich with players/draft/transactions (needs the big player file)
+    enrich();
+  }catch(e){
+    $("#app").innerHTML=`<div class="err"><b>Couldn't load.</b> ${e.message}<br><br>
+      If this says "Failed to fetch", your browser may be blocking the request to Sleeper. Open this file in Chrome or Safari (a normal tab, not a preview), and make sure you're online. If it persists, Sleeper may be rate-limiting — wait a minute and hit Refresh.</div>`;
+  }
+}
+
+//============ COMPUTE ============
+function compute(){
+  const {rName,weeks,pwk}=CUR;
+  const ids=Object.keys(rName);
+  const S={}; ids.forEach(r=>S[r]={name:rName[r],w:0,l:0,t:0,pf:0,pa:0,aw:0,al:0,left:0,scores:[]});
+  const games=[]; // {wk,hi,lo,hip,lop}
+  const completed=Object.keys(weeks).map(Number).sort((a,b)=>a-b);
+  for(const w of completed){
+    const m=weeks[w];
+    const sc=m.map(x=>({r:x.roster_id,p:x.points||0}));
+    sc.forEach(a=>sc.forEach(b=>{if(a.r!==b.r){if(a.p>b.p)S[a.r].aw++;else if(a.p<b.p)S[a.r].al++;}}));
+    m.forEach(x=>{S[x.roster_id].scores.push({wk:w,p:x.points||0});
+      if(x.players_points&&CUR.lg.roster_positions){const opt=bestLineup(CUR.lg.roster_positions,x.players_points);if(opt>(x.points||0))S[x.roster_id].left+=opt-(x.points||0);}});
+    const bm={};m.forEach(x=>{(bm[x.matchup_id]=bm[x.matchup_id]||[]).push(x);});
+    for(const k in bm){const [a,b]=bm[k];if(!a||!b)continue;const ap=a.points||0,bp=b.points||0;
+      S[a.roster_id].pf+=ap;S[a.roster_id].pa+=bp;S[b.roster_id].pf+=bp;S[b.roster_id].pa+=ap;
+      if(ap>bp){S[a.roster_id].w++;S[b.roster_id].l++;}else if(bp>ap){S[b.roster_id].w++;S[a.roster_id].l++;}else{S[a.roster_id].t++;S[b.roster_id].t++;}
+      const hi=ap>=bp?a:b,lo=ap>=bp?b:a;
+      games.push({wk:w,hi:rName[hi.roster_id],lo:rName[lo.roster_id],hip:Math.max(ap,bp),lop:Math.min(ap,bp)});}
+  }
+  const T=ids.map(r=>{const s=S[r];const g=s.w+s.l+s.t;const ap=s.aw+s.al;
+    return {...s,g,gp:completed.length,winpct:g?s.w/g:0,appct:ap?s.aw/ap:0,pfg:completed.length?s.pf/completed.length:0};});
+  return {T,games,completed};
+}
+
+// generic playoff sim
+function simulate(T,regWeeks,completed,spots,N){
+  const n=T.length;
+  const mu=T.map(t=>0.62*t.pfg+0.38*(meanPF(T)+ (t.appct-0.5)*55));
+  const mean=mu.reduce((a,b)=>a+b,0)/n; for(let i=0;i<n;i++)mu[i]=0.82*mu[i]+0.18*mean;
+  const W0=T.map(t=>t.w), PF0=T.map(t=>t.pf);
+  const rem=Math.max(0,regWeeks-completed);
+  const byes=nextPow2(spots)-spots;
+  let po=new Array(n).fill(0), ti=new Array(n).fill(0), s1=new Array(n).fill(0);
+  const SD=27;
+  const rnd=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+  for(let s=0;s<N;s++){
+    const w=W0.slice(),pf=PF0.slice();
+    for(let r=0;r<rem;r++){
+      const idx=[...Array(n).keys()].sort(()=>Math.random()-0.5);
+      const sc=mu.map(m=>m+SD*rnd());
+      for(let i=0;i<n;i+=2){const a=idx[i],b=idx[i+1];if(sc[a]>sc[b])w[a]++;else w[b]++;pf[a]+=sc[a];pf[b]+=sc[b];}
+    }
+    const order=[...Array(n).keys()].sort((a,b)=>(w[b]-w[a])||(pf[b]-pf[a]));
+    const seeds=order.slice(0,spots); seeds.forEach(i=>po[i]++); s1[order[0]]++;
+    // bracket
+    let field=seeds.slice(); // already in seed order
+    // byes: top `byes` skip first round
+    let active=field.slice(byes), bench=field.slice(0,byes);
+    const game=(a,b)=>((mu[a]+SD*rnd())>(mu[b]+SD*rnd()))?a:b;
+    while(active.length+bench.length>1){
+      // pair active by seed: best vs worst
+      let winners=[];
+      for(let i=0;i<active.length/2;i++){winners.push(game(active[i],active[active.length-1-i]));}
+      let pool=bench.concat(winners);
+      pool.sort((a,b)=>seeds.indexOf(a)-seeds.indexOf(b));
+      active=pool; bench=[];
+      if(active.length===1)break;
+    }
+    ti[active[0]]++;
+  }
+  return T.map((t,i)=>({name:t.name,playoff:po[i]/N,title:ti[i]/N,top:s1[i]/N}));
+}
+function meanPF(T){return T.reduce((a,b)=>a+b.pfg,0)/T.length;}
+function nextPow2(n){let p=1;while(p<n)p*=2;return p;}
+
+//============ RENDER CORE ============
+function renderCore(){
+  const {lg,pwk}=CUR;
+  $("#title").textContent=lg.name;
+  const comp=Object.keys(CUR.weeks).length;
+  $("#meta").textContent=`${lg.season} · ${lg.total_rosters} teams · through Week ${comp} · ${lg.scoring_settings.rec||0} PPR`;
+  const {T,games,completed}=compute();
+  CUR._T=T; CUR._games=games; CUR._completed=completed;
+  // power order
+  const power=[...T].sort((a,b)=>(b.appct-a.appct)||(b.pf-a.pf));
+  CUR._power=power;
+  // movement vs stored
+  const key=`pw_${CUR.id}`; let prev={};
+  try{prev=JSON.parse(localStorage.getItem(key)||"{}")}catch(e){}
+  const curOrder=power.map(t=>t.name);
+  let move={};
+  if(prev.week!=null && prev.week<completed.length && prev.order){
+    prev.order.forEach((nm,i)=>{const now=curOrder.indexOf(nm);if(now>=0)move[nm]=i-now;});
+  } else if(prev.order){ prev.order.forEach((nm,i)=>{const now=curOrder.indexOf(nm);if(now>=0)move[nm]=i-now;}); }
+  CUR._move=move;
+  if(prev.week==null||prev.week<completed.length){localStorage.setItem(key,JSON.stringify({week:completed.length,order:curOrder}));}
+
+  buildTabs();
+  renderStandings(); renderLuck(); renderPower(); renderOdds(); renderMatchup();
+  // award/coach that need only scores:
+  renderHardwareCore(); renderCoach();
+  renderPicks();
+  renderDispatch();
+  if(SHOTGUN_LEAGUES.includes(CUR.id)) renderShotgun();
+}
+
+function shotgunData(){
+  const {weeks,rName}=CUR; const log=[]; const count={};
+  Object.keys(rName).forEach(r=>count[rName[r]]=0);
+  const wks=Object.keys(weeks).map(Number).sort((a,b)=>a-b);
+  for(const w of wks){
+    let lo=null;
+    weeks[w].forEach(x=>{const p=x.points||0; if(lo===null||p<lo.p){lo={r:x.roster_id,p};}});
+    if(lo){const nm=rName[lo.r]; log.push({wk:w,name:nm,p:lo.p}); count[nm]=(count[nm]||0)+1;}
+  }
+  return {log,count};
+}
+function renderShotgun(){
+  const sec=$("#sec-shotgun"); if(!sec) return;
+  const {log,count}=shotgunData();
+  if(!log.length){sec.innerHTML="<h2>🥤 Shotgun counter</h2><p class='sub'>No completed weeks yet.</p>";return;}
+  const board=Object.entries(count).sort((a,b)=>b[1]-a[1]);
+  const leader=board[0];
+  let h=`<h2>🥤 Shotgun counter</h2><p class="sub">Lowest score each week downs a shotgun. Running tally, live from the box scores.</p>`;
+  if(leader&&leader[1]>0) h+=`<p style="font-size:17px">🏆 <b>Current cellar champ:</b> ${leader[0]} with <b>${leader[1]}</b> shotgun${leader[1]>1?"s":""}.</p>`;
+  h+=`<table><thead><tr><th>Manager</th><th class="n">Shotguns</th></tr></thead><tbody>`;
+  board.forEach(([n,c])=>h+=`<tr${me(n)}><td>${n}</td><td class="n">${c>0?"🥤".repeat(Math.min(c,10)):"—"} ${c||""}</td></tr>`);
+  h+="</tbody></table>";
+  const dry=board.filter(([n,c])=>c===0).map(([n])=>n);
+  if(dry.length) h+=`<p class="sub">Still stone-cold sober: ${dry.join(", ")}.</p>`;
+  h+=`<h2 style="margin-top:18px">Week by week</h2><table><thead><tr><th>Week</th><th>Shotgunned</th><th class="n">Score</th></tr></thead><tbody>`;
+  [...log].reverse().forEach(x=>h+=`<tr${me(x.name)}><td>Week ${x.wk}</td><td>${x.name}</td><td class="n">${n1(x.p)}</td></tr>`);
+  h+="</tbody></table>";
+  sec.innerHTML=h;
+}
+
+//============ 🔮 SELF-GRADING PICKS (no storage: replay each week using only prior data) ============
+function statsThrough(cut){
+  const {rName,weeks}=CUR; const ids=Object.keys(rName);
+  const S={}; ids.forEach(r=>S[r]={w:0,l:0,t:0,pf:0,g:0,aw:0,al:0});
+  const wks=Object.keys(weeks).map(Number).filter(w=>w<=cut).sort((a,b)=>a-b);
+  for(const w of wks){
+    const m=weeks[w];
+    const sc=m.map(x=>({r:x.roster_id,p:x.points||0}));
+    sc.forEach(a=>sc.forEach(b=>{if(a.r!==b.r){if(a.p>b.p)S[a.r].aw++;else if(a.p<b.p)S[a.r].al++;}}));
+    const bm={};m.forEach(x=>{(bm[x.matchup_id]=bm[x.matchup_id]||[]).push(x);});
+    for(const k in bm){const [a,b]=bm[k];if(!a||!b)continue;const ap=a.points||0,bp=b.points||0;
+      S[a.roster_id].pf+=ap;S[b.roster_id].pf+=bp;S[a.roster_id].g++;S[b.roster_id].g++;
+      if(ap>bp){S[a.roster_id].w++;S[b.roster_id].l++;}else if(bp>ap){S[b.roster_id].w++;S[a.roster_id].l++;}else{S[a.roster_id].t++;S[b.roster_id].t++;}}
+  }
+  const out={};
+  ids.forEach(r=>{const s=S[r];const ap=s.aw+s.al;
+    out[r]={...s,pfg:s.g?s.pf/s.g:0,winpct:s.g?(s.w+0.5*s.t)/s.g:0,appct:ap?s.aw/ap:0};});
+  return out;
+}
+function strengthThrough(cut){
+  const st=statsThrough(cut); const ids=Object.keys(st);
+  const mean=ids.reduce((a,r)=>a+st[r].pfg,0)/ids.length;
+  const rate={}; ids.forEach(r=>{rate[r]=0.62*st[r].pfg+0.38*(mean+(st[r].appct-0.5)*55);});
+  return {rate,st};
+}
+function weekPairs(w){
+  const m=CUR.weeks[w]; if(!m)return [];
+  const bm={};m.forEach(x=>{(bm[x.matchup_id]=bm[x.matchup_id]||[]).push(x);});
+  const out=[]; for(const k in bm){const [a,b]=bm[k];if(a&&b)out.push({a:a.roster_id,b:b.roster_id,ap:a.points||0,bp:b.points||0});}
+  return out;
+}
+const CONF=gap=>normcdf(gap/(27*Math.SQRT2)); // P(favorite wins), weekly scoring SD ~27
+function pickRecord(){
+  const {rName,weeks}=CUR;
+  const comp=Object.keys(weeks).map(Number).sort((a,b)=>a-b);
+  const perWeek=[]; let correct=0,total=0,brierSum=0;
+  for(const w of comp){ if(w<=comp[0])continue; // week 1 has no prior data to pick from
+    const {rate}=strengthThrough(w-1); const picks=[];
+    weekPairs(w).forEach(p=>{
+      const fav=rate[p.a]>=rate[p.b]?p.a:p.b, dog=fav===p.a?p.b:p.a;
+      const conf=CONF(Math.abs(rate[p.a]-rate[p.b]));
+      const aw=p.ap===p.bp?null:(p.ap>p.bp?p.a:p.b);
+      const hit=aw===null?null:aw===fav;
+      if(hit!==null){total++; if(hit)correct++; brierSum+=Math.pow(conf-(hit?1:0),2);}
+      picks.push({fav:rName[fav],dog:rName[dog],conf,hit,
+        favScore:fav===p.a?p.ap:p.bp, dogScore:dog===p.a?p.ap:p.bp});
+    });
+    perWeek.push({wk:w,picks});
+  }
+  return {correct,total,perWeek,brier:total?brierSum/total:null};
+}
+function upcomingPicks(){
+  if(!CUR.upcoming||!CUR.upcoming.length)return null;
+  const comp=Object.keys(CUR.weeks).map(Number); if(!comp.length)return null;
+  const {rate}=strengthThrough(Math.max(...comp));
+  const {rName,upcoming,upWeek}=CUR;
+  const bm={};upcoming.forEach(x=>{(bm[x.matchup_id]=bm[x.matchup_id]||[]).push(x);});
+  const picks=[];
+  for(const k in bm){const [a,b]=bm[k];if(!a||!b)continue;
+    const ra=rate[a.roster_id],rb=rate[b.roster_id];
+    const fav=ra>=rb?a.roster_id:b.roster_id, dog=fav===a.roster_id?b.roster_id:a.roster_id;
+    picks.push({fav:rName[fav],dog:rName[dog],conf:CONF(Math.abs(ra-rb))});}
+  picks.sort((x,y)=>y.conf-x.conf);
+  return {week:upWeek,picks};
+}
+function boldReplay(){
+  const {rName,weeks}=CUR;
+  const comp=Object.keys(weeks).map(Number).sort((a,b)=>a-b);
+  const rows=[]; let hit=0,tot=0;
+  for(const w of comp){ if(w<=comp[0])continue;
+    const {st}=strengthThrough(w-1);
+    const pairs=weekPairs(w); const playing=new Set(); pairs.forEach(p=>{playing.add(String(p.a));playing.add(String(p.b));});
+    const arr=Object.keys(st).filter(r=>st[r].g>0&&playing.has(String(r))).map(r=>({r,luck:st[r].winpct-st[r].appct}));
+    if(arr.length<2)continue;
+    const lucky=[...arr].sort((a,b)=>b.luck-a.luck)[0];
+    const robbed=[...arr].sort((a,b)=>a.luck-b.luck)[0];
+    const resOf=rid=>{const p=pairs.find(p=>String(p.a)===String(rid)||String(p.b)===String(rid));if(!p)return null;
+      const mine=String(p.a)===String(rid)?p.ap:p.bp, opp=String(p.a)===String(rid)?p.bp:p.ap; return mine===opp?null:(mine>opp?'W':'L');};
+    if(lucky.luck>0.05){const r=resOf(lucky.r);if(r!==null){tot++;const ok=r==='L';if(ok)hit++;rows.push({wk:w,call:`${rName[lucky.r]} — riding luck — takes an L`,ok});}}
+    if(robbed.luck<-0.05&&robbed.r!==lucky.r){const r=resOf(robbed.r);if(r!==null){tot++;const ok=r==='W';if(ok)hit++;rows.push({wk:w,call:`${rName[robbed.r]} — owed by variance — bounces back with a W`,ok});}}
+  }
+  return {rows,hit,tot};
+}
+function boldUpcoming(){
+  if(!CUR.upcoming||!CUR.upcoming.length)return null;
+  const comp=Object.keys(CUR.weeks).map(Number); if(!comp.length)return null;
+  const {st}=strengthThrough(Math.max(...comp));
+  const {rName,upcoming,upWeek}=CUR;
+  const playing=new Set();upcoming.forEach(x=>playing.add(String(x.roster_id)));
+  const arr=Object.keys(st).filter(r=>st[r].g>0&&playing.has(String(r))).map(r=>({r,luck:st[r].winpct-st[r].appct}));
+  if(arr.length<2)return null;
+  const lucky=[...arr].sort((a,b)=>b.luck-a.luck)[0];
+  const robbed=[...arr].sort((a,b)=>a.luck-b.luck)[0];
+  const calls=[];
+  if(lucky.luck>0.05)calls.push(`🎲 <b>${rName[lucky.r]}</b> has been winning more than the box scores say they should. Bold call: Week ${upWeek} is where the bill comes due — <b>they lose.</b>`);
+  if(robbed.luck<-0.05&&robbed.r!==lucky.r)calls.push(`💸 <b>${rName[robbed.r]}</b> has been robbed blind by the schedule. Variance owes them — bold call: <b>they win Week ${upWeek}.</b>`);
+  if(!calls.length)return null;
+  return {week:upWeek,calls};
+}
+function renderPicks(){
+  const sec=$("#sec-picks"); if(!sec)return;
+  const comp=Object.keys(CUR.weeks).map(Number);
+  if(comp.length<2){sec.innerHTML=`<h2>🔮 The Picks</h2><p class="sub">The model needs at least two completed weeks before it can start grading itself — it predicts each week using only the data that existed before kickoff. Check back after Week 2.</p>`;return;}
+  const pr=pickRecord(), up=upcomingPicks(), bold=boldReplay(), bu=boldUpcoming();
+  let h=`<h2>🔮 The Picks</h2><p class="sub">A power-rating model picks every game, then grades itself. The only rule: each week is predicted using <i>only</i> the data that existed before it was played — no hindsight.</p>`;
+
+  // ---- This week's board ----
+  if(up&&up.picks.length){
+    const lock=up.picks[0], flip=up.picks[up.picks.length-1];
+    h+=`<h2 style="margin-top:6px">The board <span class="badge">WK ${up.week}</span></h2>`;
+    h+=`<div class="award"><div class="t">🔒 LOCK OF THE WEEK</div><p>${lock.fav} over ${lock.dog} — <b>${pct(lock.conf)}%</b> model confidence</p></div>`;
+    if(flip.fav!==lock.fav||up.picks.length>1)
+      h+=`<div class="award"><div class="t">🪙 COIN FLIP</div><p>${flip.fav} over ${flip.dog} — just <b>${pct(flip.conf)}%</b>. The model's barely leaning.</p></div>`;
+    h+=`<table style="margin-top:10px"><thead><tr><th>Pick</th><th>Over</th><th class="n">Confidence</th></tr></thead><tbody>`;
+    up.picks.forEach(p=>{h+=`<tr${me(p.fav)}><td><b>${p.fav}</b></td><td style="color:var(--muted)">${p.dog}</td><td class="n">${pct(p.conf)}%</td></tr>`;});
+    h+="</tbody></table>";
+  }
+
+  // ---- Bold predictions (pending, graded next week) ----
+  if(bu&&bu.calls.length){
+    h+=`<h2 style="margin-top:20px">Bold predictions <span class="badge">WK ${bu.week}</span></h2>`;
+    h+=`<p class="sub">These go against the grain on purpose. They get a ✅ or ❌ right here next week.</p>`;
+    bu.calls.forEach(c=>h+=`<p style="font-size:16px;margin:8px 0">${c}</p>`);
+  }
+
+  // ---- Track record ----
+  const acc=pr.total?Math.round(pr.correct/pr.total*100):0;
+  h+=`<h2 style="margin-top:22px">The model's track record</h2>`;
+  h+=`<p style="font-size:17px">Straight-up picks: <b>${pr.correct}-${pr.total-pr.correct}</b> (${acc}%).`;
+  if(pr.brier!=null){const cal=pr.brier<0.2?"sharp":pr.brier<0.25?"roughly calibrated":"basically guessing";
+    h+=` Brier score <b>${pr.brier.toFixed(3)}</b> — ${cal} <span class="sub">(0.25 is a coin flip; lower is better)</span>.`;}
+  h+=`</p>`;
+  if(bold.tot)h+=`<p style="font-size:17px">Bold calls: <b>${bold.hit}-${bold.tot-bold.hit}</b> — ${bold.hit>bold.tot-bold.hit?"the contrarian streak is paying":bold.hit===bold.tot-bold.hit?"a wash so far":"the chalk is winning, as usual"}.</p>`;
+
+  // per-week detail
+  h+=`<h2 style="margin-top:18px">Week by week</h2>`;
+  [...pr.perWeek].reverse().forEach(wk=>{
+    const graded=wk.picks.filter(p=>p.hit!==null);
+    const c=graded.filter(p=>p.hit).length;
+    h+=`<p style="margin:12px 0 4px"><b>Week ${wk.wk}</b> — model went ${c}-${graded.length-c}</p>`;
+    h+=`<table><tbody>`;
+    wk.picks.forEach(p=>{const mark=p.hit===null?'<span class="flat">push</span>':p.hit?'<span class="up">✅</span>':'<span class="down">❌</span>';
+      h+=`<tr><td>${mark}</td><td>${p.fav} <span style="color:var(--muted)">(${pct(p.conf)}%)</span></td><td style="color:var(--muted)">over ${p.dog}</td><td class="n">${n1(p.favScore)}–${n1(p.dogScore)}</td></tr>`;});
+    h+=`</tbody></table>`;
+  });
+  if(bold.rows.length){
+    h+=`<h2 style="margin-top:18px">Bold calls, graded</h2><table><tbody>`;
+    [...bold.rows].reverse().forEach(r=>h+=`<tr><td>${r.ok?'<span class="up">✅</span>':'<span class="down">❌</span>'}</td><td>W${r.wk}</td><td>${r.call}</td></tr>`);
+    h+=`</tbody></table>`;
+  }
+  sec.innerHTML=h;
+}
+
+function ordinal(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+function generateDispatch(){
+  const T=CUR._T,P=CUR._power,g=CUR._games,comp=CUR._completed.length;
+  if(!T||!T.length)return "<p>No completed games yet — check back after Week 1.</p>";
+  const byRec=[...T].sort((a,b)=>(b.w-a.w)||(b.pf-a.pf));
+  const byPF=[...T].sort((a,b)=>b.pf-a.pf);
+  const pfRank=nm=>byPF.findIndex(t=>t.name===nm)+1;
+  const byLuck=[...T].sort((a,b)=>(b.winpct-b.appct)-(a.winpct-a.appct));
+  const undef=T.filter(t=>t.l===0&&t.w>0).sort((a,b)=>b.w-a.w);
+  const winless=T.filter(t=>t.w===0&&t.l>0).sort((a,b)=>b.appct-a.appct);
+  const best=P[0];
+  let riser=null,rv=0,faller=null,fv=0;
+  for(const nm in CUR._move){const d=CUR._move[nm];if(d>rv){rv=d;riser=nm;}if(d<fv){fv=d;faller=nm;}}
+  const L=[];
+  let lede=`Through Week ${comp}, `;
+  if(undef.length){const U=undef[0];
+    lede += U.appct>=0.60
+      ? `<b>${U.name}</b> is ${recstr(U)} and looks every bit of it — a ${U.aw}-${U.al} all-play says the record is earned. `
+      : `<b>${U.name}</b> carries the only unbeaten mark at ${recstr(U)}, though a soft ${U.aw}-${U.al} all-play says to enjoy it while it lasts. `;
+  } else { lede += `nobody's left unbeaten — <b>${best.name}</b> paces the field on talent. `; }
+  if(winless.length){const Wl=winless[0];
+    lede += Wl.appct>=0.50
+      ? `At the other end, <b>${Wl.name}</b> is ${recstr(Wl)} despite the ${ordinal(pfRank(Wl.name))}-most points in the league — the schedule has been daylight robbery. `
+      : `Down at the bottom, <b>${Wl.name}</b> is ${recstr(Wl)}, and the scoreboard isn't lying about it. `;
+  }
+  L.push(`<p class="lede-dispatch">${lede}</p>`);
+  const lk=byLuck[0],rb=byLuck[byLuck.length-1];
+  if(lk.name!==rb.name)
+    L.push(`<p><b>Luckiest:</b> ${lk.name} (${recstr(lk)} on a ${lk.aw}-${lk.al} all-play). <b>Most robbed:</b> ${rb.name} (${recstr(rb)} on a ${rb.aw}-${rb.al}). The gap between what they've done and what they've deserved is the whole season in two names.</p>`);
+  if(riser||faller){let s="<p>";
+    if(riser)s+=`<b>${riser}</b> is the week's biggest riser, up ${rv} in the power board. `;
+    if(faller)s+=`<b>${faller}</b> took the hardest fall, down ${-fv}. `;
+    L.push(s+"</p>");}
+  if(g.length){const hi=[...g].sort((a,b)=>b.hip-a.hip)[0];const mpl=[...g].sort((a,b)=>b.lop-a.lop)[0];const blow=[...g].sort((a,b)=>(b.hip-b.lop)-(a.hip-a.lop))[0];
+    L.push(`<p><b>By the numbers:</b> the loudest week so far belongs to ${hi.hi} (${n1(hi.hip)}). The worst beating landed on ${blow.lo}, buried by ${n1(blow.hip-blow.lop)}. And ${mpl.lo} owns the heartbreak trophy — ${n1(mpl.lop)} points, and still a loss.</p>`);}
+  if(CUR._matchSpot){const [a,b]=CUR._matchSpot;L.push(`<p><b>Matchup of the week:</b> ${a} vs ${b}. Full tale of the tape on the Matchup tab.</p>`);}
+  const last=byRec[byRec.length-1];
+  L.push(`<p><b>The cellar:</b> ${last.name} currently sits dead last at ${recstr(last)}. You know the stakes.</p>`);
+  L.push(`<p style="color:var(--muted);font-size:13px">↑ Written live from this week's box scores. Add the trash talk, lore and shotgun results in the Commissioner's Note above — that's the part the numbers can't write.</p>`);
+  return L.join("");
+}
+function renderDispatch(){
+  const sec=$("#sec-dispatch");if(!sec)return;
+  const note=(COMMISSIONER_NOTE||"").trim();
+  const noteHTML = note
+    ? `<div class="note" style="margin-top:4px"><label>📣 COMMISSIONER'S NOTE</label><div class="cnote-text"><p>${esc(note).replace(/\n\s*\n/g,"</p><p>").replace(/\n/g,"<br>")}</p></div></div>`
+    : "";
+  // Prefer the hand-written edition for this league + latest week; fall back to auto.
+  const wkNums=Object.keys(CUR.weeks).map(Number);
+  const latest=wkNums.length?Math.max(...wkNums):0;
+  const byLeague=(typeof DISPATCHES!=="undefined"&&DISPATCHES[CUR.id])||{};
+  const hand=byLeague[latest];
+  const stamp = hand
+    ? `<p class="sub">Week ${latest} edition · written this week · data below updates itself live</p>`
+    : `<p class="sub">Auto-recap from this week's box scores — the hand-written edition drops here each week.</p>`;
+  const body = hand ? hand : generateDispatch();
+  sec.innerHTML = noteHTML + `<h2>This week's dispatch</h2>${stamp}<article class="dispatch">${body}</article>`;
+  // Then try the auto-generated weekly file committed by the GitHub Action — freshest, wins if present.
+  tryRemoteDispatch(CUR.id, latest);
+}
+// Pulls dispatches/<leagueId>/wk<week>.html if the weekly job has committed one. Same origin, no CORS.
+async function tryRemoteDispatch(id, latest){
+  if(!latest) return;
+  try{
+    const r=await fetch(`dispatches/${id}/wk${latest}.html`,{cache:"no-store"});
+    if(!r.ok || CUR.id!==id) return;
+    const html=(await r.text()).trim();
+    if(!html || CUR.id!==id) return;
+    const sec=$("#sec-dispatch"); if(!sec) return;
+    const art=sec.querySelector(".dispatch"); if(art) art.innerHTML=html;
+    const st=sec.querySelector(".sub"); if(st) st.textContent=`Week ${latest} edition · written this week · data below updates itself live`;
+  }catch(e){/* no file yet — keep the fallback already shown */}
+}
+
+function buildTabs(){
+  const tabs=[["dispatch","📰 Dispatch"],["standings","Standings"],["luck","Luck Map"],["power","Power"],["odds","Playoff Odds"],
+    ["hardware","The Hardware"],["matchup","Matchup"],["picks","🔮 Picks"],["coach","Coach Ratings"],["draft","Draft & Moves"]];
+  if(SHOTGUN_LEAGUES.includes(CUR.id)) tabs.splice(1,0,["shotgun","🥤 Shotgun"]);
+  $("#tabs").innerHTML=tabs.map((t,i)=>`<button data-t="${t[0]}" class="${i===0?'on':''}">${t[1]}</button>`).join("");
+  $("#app").innerHTML=tabs.map((t,i)=>`<section id="sec-${t[0]}" class="${i===0?'on':''}"></section>`).join("");
+  document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("on"));
+    document.querySelectorAll("section").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); $("#sec-"+b.dataset.t).classList.add("on");
+  });
+}
+const me=nm=>CUR.mine&&nm===CUR.mine?' class="me"':'';
+
+function recstr(t){return `${t.w}-${t.l}${t.t?('-'+t.t):''}`;}
+
+function renderStandings(){
+  const T=[...CUR._T].sort((a,b)=>(b.w-a.w)||(b.pf-a.pf));
+  let h=`<h2>Standings</h2><p class="sub">Click any header to sort. "All-play" is your record against the whole league each week.</p>
+  <table id="stbl"><thead><tr>
+  <th data-k="rank">#</th><th data-k="name">Team</th><th class="n" data-k="w">Rec</th>
+  <th class="n" data-k="pf">PF</th><th class="n" data-k="pa">PA</th>
+  <th class="n" data-k="appct">All-play</th><th class="n" data-k="luck">Luck</th></tr></thead><tbody>`;
+  T.forEach((t,i)=>{const luck=t.winpct-t.appct;const lk=luck>.08?'<span class="up">lucky</span>':luck<-.08?'<span class="down">robbed</span>':'<span class="flat">fair</span>';
+    h+=`<tr${me(t.name)}><td>${i+1}</td><td>${t.name}</td><td class="n">${recstr(t)}</td>
+    <td class="n">${n1(t.pf)}</td><td class="n">${n1(t.pa)}</td><td class="n">${t.aw}-${t.al}</td><td class="n">${lk}</td></tr>`;});
+  h+="</tbody></table>";
+  $("#sec-standings").innerHTML=h;
+  // sorting
+  document.querySelectorAll("#stbl th").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k; let arr=[...CUR._T];
+    if(k==="name")arr.sort((a,b)=>a.name.localeCompare(b.name));
+    else if(k==="luck")arr.sort((a,b)=>(b.winpct-b.appct)-(a.winpct-a.appct));
+    else if(k==="rank"||k==="w")arr.sort((a,b)=>(b.w-a.w)||(b.pf-a.pf));
+    else arr.sort((a,b)=>b[k]-a[k]);
+    const T2=arr;let h2=$("#stbl").outerHTML; // rebuild body
+    const tb=document.querySelector("#stbl tbody");tb.innerHTML="";
+    T2.forEach((t,i)=>{const luck=t.winpct-t.appct;const lk=luck>.08?'<span class="up">lucky</span>':luck<-.08?'<span class="down">robbed</span>':'<span class="flat">fair</span>';
+      const tr=document.createElement("tr");if(CUR.mine&&t.name===CUR.mine)tr.className="me";
+      tr.innerHTML=`<td>${i+1}</td><td>${t.name}</td><td class="n">${recstr(t)}</td><td class="n">${n1(t.pf)}</td><td class="n">${n1(t.pa)}</td><td class="n">${t.aw}-${t.al}</td><td class="n">${lk}</td>`;
+      tb.appendChild(tr);});
+  });
+}
+
+function renderLuck(){
+  const T=CUR._T;const W=760,H=460,m=54;
+  const x=v=>m+v*(W-2*m), y=v=>H-m-v*(H-2*m);
+  let dots="",lbls="";
+  T.forEach(t=>{const px=x(t.appct),py=y(t.winpct);const d=t.winpct-t.appct;
+    const c=d>.06?'#1f7a8c':(d<-.06?'#8f2230':'#8b8178');
+    dots+=`<circle cx="${px}" cy="${py}" r="7" fill="${c}" stroke="var(--paper)" stroke-width="2"><title>${t.name}: ${recstr(t)} · all-play ${t.aw}-${t.al}</title></circle>`;
+    lbls+=`<text class="lbl" x="${px+10}" y="${py+4}"${CUR.mine&&t.name===CUR.mine?' font-weight="bold"':''}>${t.name}</text>`;});
+  $("#sec-luck").innerHTML=`<h2>The luck map</h2><p class="sub">Above the dotted line you're winning more than you deserve. Below it, you're getting robbed. Hover a dot for the record.</p>
+  <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:var(--card);border:1px solid var(--rule);border-radius:8px">
+    <line class="diag" x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}"/>
+    <line class="axis" x1="${m}" y1="${H-m}" x2="${W-m}" y2="${H-m}"/>
+    <line class="axis" x1="${m}" y1="${m}" x2="${m}" y2="${H-m}"/>
+    <text class="lbl" x="${x(.08)}" y="${y(.93)}" fill="#1f7a8c" font-weight="bold" font-style="italic" font-size="14">LUCKY</text>
+    <text class="lbl" x="${x(.72)}" y="${y(.07)}" fill="#8f2230" font-weight="bold" font-style="italic" font-size="14">ROBBED</text>
+    <text class="lbl" x="${W/2}" y="${H-14}" text-anchor="middle" fill="var(--muted)">All-play win% — how good you've actually been</text>
+    ${dots}${lbls}
+  </svg>`;
+}
+
+function renderPower(){
+  const P=CUR._power,mv=CUR._move;
+  let h=`<h2>Power rankings</h2><p class="sub">Ranked by all-play (true strength), with movement since you last opened this on an earlier week.</p>`;
+  P.forEach((t,i)=>{const d=mv[t.name];
+    const arrow=d>0?`<span class="up">▲ ${d}</span>`:d<0?`<span class="down">▼ ${-d}</span>`:`<span class="flat">— 0</span>`;
+    h+=`<div class="rk"><div class="n">${i+1}</div><div class="mv">${arrow}</div><div class="tx"><span class="tm"${CUR.mine&&t.name===CUR.mine?' style="text-decoration:underline"':''}>${t.name}</span> — ${recstr(t)}, ${t.aw}-${t.al} all-play, ${n1(t.pfg)} pts/game</div></div>`;});
+  $("#sec-power").innerHTML=h;
+}
+
+function renderOdds(){
+  $("#sec-odds").innerHTML=`<h2>Playoff &amp; title odds</h2><p class="sub"><span class="spin"></span>Running 4,000 simulated seasons in your browser…</p>`;
+  setTimeout(()=>{
+    const spots=CUR.lg.settings.playoff_teams||6;
+    const res=simulate(CUR._T,CUR.pwk-1,CUR._completed.length,spots,4000);
+    res.sort((a,b)=>b.playoff-a.playoff);
+    let h=`<h2>Playoff &amp; title odds</h2><p class="sub">${spots} of ${CUR._T.length} make the playoffs. A 4,000-season Monte Carlo from current records — a forecast, not a promise.</p>
+    <table><thead><tr><th>Team</th><th class="n">Playoffs</th><th class="n">1 seed</th><th class="n">Title</th></tr></thead><tbody>`;
+    res.forEach(r=>{h+=`<tr${me(r.name)}><td>${r.name}</td><td class="n">${pct(r.playoff)}%</td><td class="n">${pct(r.top)}%</td><td class="n">${pct(r.title)}%</td></tr>`;});
+    h+="</tbody></table>";
+    $("#sec-odds").innerHTML=h;
+  },30);
+}
+
+function renderMatchup(){
+  const sec=$("#sec-matchup");
+  if(!CUR.upcoming||!CUR.upcoming.length){sec.innerHTML="<h2>Matchup of the week</h2><p class='sub'>No upcoming matchups posted yet.</p>";return;}
+  const {rName,upcoming,upWeek}=CUR;
+  const bm={};upcoming.forEach(x=>{(bm[x.matchup_id]=bm[x.matchup_id]||[]).push(x);});
+  const byName={};CUR._T.forEach(t=>byName[t.name]=t);
+  const pairs=[];for(const k in bm){const [a,b]=bm[k];if(a&&b)pairs.push([rName[a.roster_id],rName[b.roster_id]]);}
+  // spotlight = pair maximizing combined all-play + closeness
+  let best=null,bs=-1;
+  pairs.forEach(([a,b])=>{const A=byName[a],B=byName[b];if(!A||!B)return;
+    const juice=(A.appct+B.appct)*2 - Math.abs(A.appct-B.appct);
+    if(juice>bs){bs=juice;best=[a,b];}});
+  CUR._matchSpot=best;
+  let h=`<h2>Matchup of the week <span class="badge">WK ${upWeek}</span></h2>`;
+  if(best){const A=byName[best[0]],B=byName[best[1]];
+    h+=`<div class="motw"><div class="vs">${A.name} (${recstr(A)}) &nbsp;vs&nbsp; ${B.name} (${recstr(B)})</div>
+    <p>All-play: ${A.name} ${A.aw}-${A.al} · ${B.name} ${B.aw}-${B.al}. Scoring: ${n1(A.pfg)} vs ${n1(B.pfg)} per game.</p></div>`;}
+  h+=`<p class="sub" style="margin-top:14px">All week ${upWeek} matchups:</p><table><tbody>`;
+  pairs.forEach(([a,b])=>{const A=byName[a]||{},B=byName[b]||{};
+    h+=`<tr><td${CUR.mine&&(a===CUR.mine)?' style="font-weight:bold"':''}>${a} (${A.w||0}-${A.l||0})</td><td style="text-align:center;color:var(--muted)">vs</td><td style="text-align:right"${CUR.mine&&(b===CUR.mine)?' ':''}>${b} (${B.w||0}-${B.l||0})</td></tr>`;});
+  h+="</tbody></table>";
+  sec.innerHTML=h;
+}
+
+function renderCoach(){
+  const T=[...CUR._T].sort((a,b)=>a.left-b.left);
+  let h=`<h2>Coach ratings</h2><p class="sub">Points left on the bench all season — the part you actually control. Lower is better.</p>
+  <table><thead><tr><th>#</th><th>Manager</th><th class="n">Points benched</th></tr></thead><tbody>`;
+  T.forEach((t,i)=>h+=`<tr${me(t.name)}><td>${i+1}</td><td>${t.name}</td><td class="n">${n1(t.left)}</td></tr>`);
+  h+="</tbody></table>";
+  $("#sec-coach").innerHTML=h;
+}
+
+function renderHardwareCore(){
+  const g=CUR._games;
+  if(!g.length){$("#sec-hardware").innerHTML="<h2>The Hardware</h2><p class='sub'>No completed games yet.</p>";return;}
+  const hi=[...g].sort((a,b)=>b.hip-a.hip)[0];
+  const blow=[...g].sort((a,b)=>(b.hip-b.lop)-(a.hip-a.lop))[0];
+  const close=[...g].sort((a,b)=>(a.hip-a.lop)-(b.hip-b.lop))[0];
+  const mpl=[...g].sort((a,b)=>b.lop-a.lop)[0]; // most points in a loss
+  // weekly lows
+  let lows={};g.forEach(x=>{(lows[x.wk]=lows[x.wk]||[]).push({t:x.hi,p:x.hip},{t:x.lo,p:x.lop})});
+  let lowstr=Object.keys(lows).map(w=>{const lo=lows[w].sort((a,b)=>a.p-b.p)[0];return `W${w}: ${lo.t} (${n1(lo.p)})`;}).join(" · ");
+  $("#sec-hardware").innerHTML=`<h2>The Hardware</h2><p class="sub">Recomputed live every week from the real box scores.</p>
+  <div class="award"><div class="t">🏆 HIGH SCORE</div><p>${hi.hi} — <b>${n1(hi.hip)}</b> (Week ${hi.wk})</p></div>
+  <div class="award"><div class="t">😤 MOST POINTS IN A LOSS</div><p>${mpl.lo} — <b>${n1(mpl.lop)}</b> and still lost to ${mpl.hi}'s ${n1(mpl.hip)} (Week ${mpl.wk})</p></div>
+  <div class="award"><div class="t">💥 BIGGEST BLOWOUT</div><p>${blow.hi} ${n1(blow.hip)}, ${blow.lo} ${n1(blow.lop)} — by <b>${n1(blow.hip-blow.lop)}</b> (Week ${blow.wk})</p></div>
+  <div class="award"><div class="t">🔎 CLOSEST GAME</div><p>${close.hi} ${n1(close.hip)}, ${close.lo} ${n1(close.lop)} — by <b>${n1(close.hip-close.lop)}</b> (Week ${close.wk})</p></div>
+  <div class="award"><div class="t">🥤 LOW SCORE EACH WEEK</div><p style="font-size:13px">${lowstr}</p></div>
+  <div id="hw-players"></div>`;
+}
+
+//============ ENRICH (players, draft, transactions) ============
+async function enrich(){
+  const id=CUR.id;
+  try{ if(!PLAYERS){PLAYERS=await j(`${API}/players/nfl`);} }catch(e){ return; }
+  renderTopPerformers(); renderMVPsInjuries(); renderDraftMoves();
+}
+function renderTopPerformers(){
+  const {weeks,rName}=CUR;const tops=[];
+  for(const w in weeks){for(const x of weeks[w]){const st=new Set(x.starters||[]);const pp=x.players_points||{};
+    for(const p in pp){if(st.has(p)&&pp[p]>=30)tops.push({pl:pname(p),tm:rName[x.roster_id],wk:+w,pts:pp[p]});}}}
+  tops.sort((a,b)=>b.pts-a.pts);
+  if(!tops.length)return;
+  const el=$("#hw-players");if(!el)return;
+  el.innerHTML=`<div class="award"><div class="t">🔥 TOP PERFORMANCES (started, 30+)</div>${
+    tops.slice(0,8).map(t=>`<p style="font-size:13px">${n1(t.pts)} — ${t.pl} (${t.tm}, Wk ${t.wk})</p>`).join("")}</div>`;
+}
+function renderMVPsInjuries(){
+  const {weeks,rName,rosters}=CUR;
+  const tp={};Object.keys(rName).forEach(r=>tp[r]={});
+  for(const w in weeks)for(const x of weeks[w]){const pp=x.players_points||{};for(const p in pp)tp[x.roster_id][p]=(tp[x.roster_id][p]||0)+pp[p];}
+  let h=`<h2 style="margin-top:8px">Rosters: MVPs &amp; injuries</h2><p class="sub">Each team's top scorer, and who's hurt right now (live from Sleeper's injury tags).</p><table><thead><tr><th>Team</th><th>Season MVP</th><th>Injured</th></tr></thead><tbody>`;
+  rosters.forEach(r=>{const mv=Object.keys(tp[r.roster_id]).sort((a,b)=>tp[r.roster_id][b]-tp[r.roster_id][a])[0];
+    const inj=(r.players||[]).map(p=>({n:pname(p),s:pinj(p)})).filter(o=>o.s&&["Out","IR","Doubtful","PUP","Sus","NA"].includes(o.s));
+    h+=`<tr${me(rName[r.roster_id])}><td>${rName[r.roster_id]}</td><td>${mv?pname(mv)+" ("+n1(tp[r.roster_id][mv])+")":"-"}</td>
+    <td style="color:var(--bad);font-size:12px">${inj.map(o=>o.n+" ("+o.s+")").join(", ")||"—"}</td></tr>`;});
+  h+="</tbody></table>";
+  // append to draft tab top
+  CUR._mvpHTML=h;
+}
+async function renderDraftMoves(){
+  const id=CUR.id;const {rName}=CUR;
+  let steals="",trades="",faab="";
+  // season points per player
+  const sp={};for(const w in CUR.weeks)for(const x of CUR.weeks[w]){const pp=x.players_points||{};for(const p in pp)sp[p]=(sp[p]||0)+pp[p];}
+  try{const drafts=await j(`${API}/league/${id}/drafts`);const drk=drafts[0];
+    const picks=await j(`${API}/draft/${drk.draft_id}/picks`);
+    const isAuc=drk.type==="auction"||(picks[0]&&picks[0].metadata&&picks[0].metadata.amount);
+    const rows=picks.map(pk=>({name:pname(pk.player_id),pos:ppos(pk.player_id),rd:pk.round,no:pk.pick_no,
+      amt:pk.metadata&&pk.metadata.amount?+pk.metadata.amount:null,
+      team:rName[pk.roster_id]||"?",pts:sp[pk.player_id]||0}));
+    const byVal=[...rows].sort((a,b)=>b.pts-a.pts);
+    steals=`<h2 style="margin-top:14px">Draft — top scorers ${isAuc?"(with $ cost)":"(with pick)"}</h2><table><tbody>`+
+      byVal.slice(0,12).map(r=>`<tr><td>${r.name} <span style="color:var(--muted)">${r.pos}</span></td><td class="n">${n1(r.pts)} pts</td><td class="n" style="color:var(--muted)">${isAuc?("$"+r.amt):("pk "+r.no)}</td></tr>`).join("")+"</tbody></table>";
+  }catch(e){steals="<p class='sub'>Draft data unavailable.</p>";}
+  try{const tr=[],ad=[];const spent={};
+    for(let w=1;w<CUR.pwk;w++){let tx;try{tx=await j(`${API}/league/${id}/transactions/${w}`)}catch(e){continue}
+      for(const t of tx){if(t.status!=="complete")continue;
+        if(t.type==="trade"){const parts=(t.roster_ids||[]).map(r=>rName[r]).join(" ↔ ");const mv=[];if(t.adds)for(const p in t.adds)mv.push(pname(p)+"→"+rName[t.adds[p]]);tr.push(`W${w}: ${parts} — ${mv.join(", ")}`);}
+        else if((t.type==="waiver"||t.type==="free_agent")&&t.adds){const bid=t.settings&&t.settings.waiver_bid;for(const p in t.adds){ad.push({w,who:rName[t.adds[p]],p:pname(p),bid:bid||0});spent[rName[t.adds[p]]]=(spent[rName[t.adds[p]]]||0)+(bid||0);}}}}
+    trades=`<h2 style="margin-top:14px">Trades (${tr.length})</h2>`+(tr.length?("<table><tbody>"+tr.map(t=>`<tr><td style="font-size:13px">${t}</td></tr>`).join("")+"</tbody></table>"):"<p class='sub'>No trades yet.</p>");
+    ad.sort((a,b)=>b.bid-a.bid);
+    faab=`<h2 style="margin-top:14px">Top waiver pickups</h2><table><tbody>`+ad.slice(0,10).map(a=>`<tr><td>${a.p}</td><td>→ ${a.who}</td><td class="n">$${a.bid} (W${a.w})</td></tr>`).join("")+"</tbody></table>"+
+      `<h2 style="margin-top:14px">FAAB spent</h2><table><tbody>`+Object.entries(spent).sort((a,b)=>b[1]-a[1]).map(([t,v])=>`<tr><td>${t}</td><td class="n">$${v}</td></tr>`).join("")+"</tbody></table>";
+  }catch(e){}
+  $("#sec-draft").innerHTML=(CUR._mvpHTML||"")+steals+trades+faab;
+}
+
+//============ COMMISSIONER'S NOTE ============
+function noteKey(){return "almanac_note_"+ (CUR?CUR.id : ($("#league").value||""));}
+
+//============ WIRE UP ============
+$("#league").addEventListener("change",e=>{load(e.target.value);});
+$("#refresh").addEventListener("click",()=>load($("#league").value));
+$("#addbtn").addEventListener("click",()=>{
+  const id=$("#addid").value.trim(),nm=$("#addname").value.trim()||("League "+id.slice(-4));
+  if(!/^\d{5,}$/.test(id)){alert("Enter a numeric Sleeper league ID.");return;}
+  let extra=[];try{extra=JSON.parse(localStorage.getItem("almanac_leagues")||"[]")}catch(e){}
+  if(!extra.find(l=>l.id===id)&&!PRESETS.find(l=>l.id===id)){extra.push({name:nm,id});localStorage.setItem("almanac_leagues",JSON.stringify(extra));}
+  $("#addid").value="";$("#addname").value="";fillLeagueSelect();$("#league").value=id;load(id);
+});
+
+$("#copylink").addEventListener("click",()=>{
+  const url=location.origin+location.pathname+"?lg="+(CUR?CUR.id:$("#league").value);
+  const done=()=>{const b=$("#copylink");const t=b.textContent;b.textContent="✓ Copied!";setTimeout(()=>b.textContent=t,1500);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(done,()=>prompt("Copy this link:",url));}
+  else prompt("Copy this link:",url);
+});
+
+fillLeagueSelect();
+// A shared link like ...?lg=1389331035040260096 opens straight to that league. Otherwise fall back to last-viewed, then the first preset.
+const urlId=leagueFromURL();
+if(urlId && !leagues().find(l=>l.id===urlId)){
+  const o=document.createElement("option");o.value=urlId;o.textContent="League "+urlId.slice(-4);$("#league").appendChild(o);
+}
+const startId=urlId||localStorage.getItem("almanac_last")||$("#league").value||PRESETS[0].id;
+$("#league").value=startId;
+load(startId);
+</script>
+</body>
+</html>
